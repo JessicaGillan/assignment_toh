@@ -74,7 +74,7 @@ class TowersOfHanoi
  			print ('-' * @disks).center(11)
  		end
  		puts
- 		
+
 	end
 
 	def get_input
@@ -91,27 +91,50 @@ class TowersOfHanoi
 
 	def valid?(source, destination)
 		source_stack = source.to_i
-		dest_stack = destination.to_i
+		dest_stack = destination.to_i		
+
+		@errors = [] # Clear previous errors
 
 		return true if valid_source?(source_stack) && valid_destination?(dest_stack) && top_disk_smaller?(source_stack, dest_stack) 
-			
-		puts "Invalid input."
+
+		print_errors
+
 		return false
+	end
+
+	def print_errors
+		puts
+		puts "Invalid input!"
+
+		@errors.each do |error|
+			puts error
+		end
+		puts
 	end
 
 	def valid_source?(source)
 		# Check if source stack is in range, if so, make sure it's not empty
-		return !@stacks[ source-1 ].empty? if (1..3).include? source
+		if (1..3).include? source
+			return true if !@stacks[ source-1 ].empty? 
+		end
+		
+		@errors << "Invalid source stack"
 		return false
 	end
 
 	def valid_destination?(destination)
-		return (1..3).include? destination
+		return true if (1..3).include? destination
+
+		@errors << "Invalid destination stack"
+		return false
 	end
 
 	def top_disk_smaller?(source, destination)
 		# Make sure destination stack is either empty or has a bigger disk then the disk to put on top of it.
-		return @stacks[ destination-1 ].empty? || @stacks[ destination-1 ][-1] > @stacks[ source-1 ][-1] 
+		return true if @stacks[ destination-1 ].empty? || @stacks[ destination-1 ][-1] > @stacks[ source-1 ][-1] 
+
+		@errors << "Cannot place disk on top of a smaller disk"
+		return false
 	end
 
 	def update_game(source, destination)
