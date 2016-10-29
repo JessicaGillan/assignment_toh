@@ -85,26 +85,32 @@ class TowersOfHanoi
 			input = gets.strip.split(',')
 			exit if input[0] == 'q'
 
-			return input[0].to_i, input[1].to_i if valid?(input[0],input[1]) 
+			if valid?(input[0],input[1]) 
+				return input[0].to_i, input[1].to_i 
+			else
+				print_errors(input[0].to_i, input[1].to_i )
+			end
 		end		
 	end
 
 	def valid?(source, destination)
 		source_stack = source.to_i
-		dest_stack = destination.to_i		
-
-		@errors = [] # Clear previous errors
+		dest_stack = destination.to_i				
 
 		return true if valid_source?(source_stack) && valid_destination?(dest_stack) && top_disk_smaller?(source_stack, dest_stack) 
-
-		print_errors
-
 		return false
 	end
 
-	def print_errors
+	def print_errors(source_stack, dest_stack)
 		puts
 		puts "Invalid input!"
+
+		@errors = [] # Clear previous errors
+
+		@errors << "Invalid source stack" unless valid_source?(source_stack)
+		@errors << "Invalid destination stack" unless valid_destination?(dest_stack)
+		# Don't try to access stack elements unless both are valid!
+		@errors << "Cannot place disk on top of a smaller disk" if valid_source?(source_stack) && valid_destination?(dest_stack) && !top_disk_smaller?(source_stack, dest_stack)
 
 		@errors.each do |error|
 			puts error
@@ -115,26 +121,20 @@ class TowersOfHanoi
 	def valid_source?(source)
 		# Check if source stack is in range, if so, make sure it's not empty
 		if (1..3).include? source
-			return true if !@stacks[ source-1 ].empty? 
-		end
+			return !@stacks[ source-1 ].empty? 
+		end		
 		
-		@errors << "Invalid source stack"
 		return false
 	end
 
 	def valid_destination?(destination)
 		return true if (1..3).include? destination
-
-		@errors << "Invalid destination stack"
 		return false
 	end
 
 	def top_disk_smaller?(source, destination)
 		# Make sure destination stack is either empty or has a bigger disk then the disk to put on top of it.
-		return true if @stacks[ destination-1 ].empty? || @stacks[ destination-1 ][-1] > @stacks[ source-1 ][-1] 
-
-		@errors << "Cannot place disk on top of a smaller disk"
-		return false
+		return @stacks[ destination-1 ].empty? || @stacks[ destination-1 ][-1] > @stacks[ source-1 ][-1] 
 	end
 
 	def update_game(source, destination)
@@ -159,10 +159,12 @@ class TowersOfHanoi
 			return false
 		end
 	end
+	
 end
 
 input = ARGV
 disks = ARGV[0].to_i unless ARGV.empty?
+ARGV.clear
 
 game = TowersOfHanoi.new( disks ||= 3 )
 
