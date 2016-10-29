@@ -9,39 +9,29 @@
 # Option to enter number of disks as script input, default is 3.
 
 class TowersOfHanoi
+	QUIT_OPTIONS = ['q', 'quit', 'exit']
 
 	def initialize(num_disks)
 		@disks = num_disks	
 	end
 
-	# Create the starting stack
-
+	# Return full stack of disks
 	def full_stack
 		return (1..@disks).to_a.reverse
 	end
 
 	# Main method
-
 	def play
 		loop do
 			# Initialize the disks
-
 			@stacks = [ full_stack, [], [] ]	
 
-			puts "---------------------------------------------------"
-			puts "Welcome to Towers of Hanoi!"
-			puts "Rebuild the stack on another rod to win."
-			puts "Rules:"
-			puts "1. You may only move one disk at a time"
-			puts "2. You can only move the top disk of a stack"
-			puts "3. No disk can be placed on top of a smaller disk"
-			puts "---------------------------------------------------"
-			puts
+			print_welcome
 
 			until victory?
 				render
-				source, destination = get_input
-				update_game(source, destination)
+				source_input, destination_input = get_input
+				make_move( source_input-1, destination_input-1 )
 			end
 
 			render
@@ -51,10 +41,20 @@ class TowersOfHanoi
 		end 
 	end
 
+	def print_welcome
+			puts "---------------------------------------------------"
+			puts "Welcome to Towers of Hanoi!"
+			puts "Rebuild the stack on another rod to win."
+			puts "Rules:"
+			puts "1. You may only move one disk at a time"
+			puts "2. You can only move the top disk of a stack"
+			puts "3. No disk can be placed on top of a smaller disk"
+			puts "---------------------------------------------------"
+			puts		
+	end
+
 	# Display the current state of disks
-
 	def render
-
 		# Display the disks from top to bottom, row by row
 		@disks.times do |i|
 			@stacks.length.times do |j|
@@ -69,82 +69,72 @@ class TowersOfHanoi
 			puts # Go to the next line for next row
 		end
  		
- 		# Print markers for each stack location
+ 		# Print markers for each stack location, lengthened according to number of disks in game
  		@stacks.length.times do
  			print ('-' * @disks).center(11)
  		end
  		puts
-
 	end
 
+	# Only get input! Do not also check it. 
 	def get_input
 		loop do 
 			puts "Enter stack to move from and to separated by a comma (eg 1,3) or 'q' to quit: "
 			print "> "
 
 			input = gets.strip.split(',')
-			exit if input[0] == 'q'
 
-			if valid?(input[0],input[1]) 
-				return input[0].to_i, input[1].to_i 
+			if QUIT_OPTIONS.include?(input.first)
+				return input.first
+			elsif valid?( input.map(&:to_i) ) 
+				return input.map(&:to_i) # the '&:to_i' is taking the :to_i method, degrading to a block, and passing it to map
 			else
-				print_errors(input[0].to_i, input[1].to_i )
+				print_errors( input.map(&:to_i) )
 			end
 		end		
 	end
 
-	def valid?(source, destination)
-		source_stack = source.to_i
-		dest_stack = destination.to_i				
-
-		return true if valid_source?(source_stack) && valid_destination?(dest_stack) && top_disk_smaller?(source_stack, dest_stack) 
-		return false
+	def valid?(input)
+		return false unless valid_source?( input.first ) 
+		return false unless valid_destination?( input.last ) 
+		return false unless top_disk_smaller?( input.first, input.last ) 
+		return true
 	end
 
-	def print_errors(source_stack, dest_stack)
+	def print_errors(input)
 		puts
 		puts "Invalid input!"
-
-		@errors = [] # Clear previous errors
-
-		@errors << "Invalid source stack" unless valid_source?(source_stack)
-		@errors << "Invalid destination stack" unless valid_destination?(dest_stack)
+		puts "Invalid source stack" unless valid_source?( input.first )
+		puts "Invalid destination stack" unless valid_destination?( input.last )
 		# Don't try to access stack elements unless both are valid!
-		@errors << "Cannot place disk on top of a smaller disk" if valid_source?(source_stack) && valid_destination?(dest_stack) && !top_disk_smaller?(source_stack, dest_stack)
-
-		@errors.each do |error|
-			puts error
-		end
+		puts "Cannot place disk on top of a smaller disk" if valid_source?( input.first ) && valid_destination?( input.last ) && !top_disk_smaller?( input.first, input.last )
 		puts
 	end
 
+	# Check if source stack is in range, if so, make sure it's not empty
 	def valid_source?(source)
-		# Check if source stack is in range, if so, make sure it's not empty
-		if (1..3).include? source
-			return !@stacks[ source-1 ].empty? 
-		end		
-		
-		return false
+		return false unless (1..3).include? source
+		return !@stacks[ source-1 ].empty? 
 	end
 
+	# Check if destination stack is in range
 	def valid_destination?(destination)
-		return true if (1..3).include? destination
-		return false
+		return (1..3).include? destination
 	end
 
+	# Make sure destination stack is either empty or has a bigger disk then the disk to put on top of it.
 	def top_disk_smaller?(source, destination)
-		# Make sure destination stack is either empty or has a bigger disk then the disk to put on top of it.
-		return @stacks[ destination-1 ].empty? || @stacks[ destination-1 ][-1] > @stacks[ source-1 ][-1] 
+		return true if @stacks[ destination-1 ].empty? 
+		return @stacks[ destination-1 ][-1] > @stacks[ source-1 ][-1] 
 	end
 
-	def update_game(source, destination)
-		disk = @stacks[ source-1 ].pop
-		@stacks[ destination-1 ].push(disk)		
+	def make_move(source_stack, destination_stack)
+		@stacks[destination_stack].push( @stacks[source_stack].pop )		
 	end
 
+	# Check if second or third stack is a complete stack
 	def victory?
-		return true if @stacks[1] == full_stack || @stacks[2] == full_stack
-		return false
+		return @stacks[1] == full_stack || @stacks[2] == full_stack
 	end
 
 	def play_again?
@@ -159,7 +149,7 @@ class TowersOfHanoi
 			return false
 		end
 	end
-	
+
 end
 
 input = ARGV
